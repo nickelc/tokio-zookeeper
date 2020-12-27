@@ -1,9 +1,9 @@
 use super::Watch;
 use super::ZkError;
+use crate::{Acl, CreateMode};
 use byteorder::{BigEndian, WriteBytesExt};
 use std::borrow::Cow;
 use std::io::{self, Write};
-use {Acl, CreateMode};
 
 #[derive(Debug)]
 pub(crate) enum Request {
@@ -151,21 +151,21 @@ impl WriteTo for MultiHeader {
 
 impl WriteTo for u8 {
     fn write_to<W: Write>(&self, mut writer: W) -> io::Result<()> {
-        try!(writer.write_u8(*self));
+        r#try!(writer.write_u8(*self));
         Ok(())
     }
 }
 
 impl WriteTo for str {
     fn write_to<W: Write>(&self, mut writer: W) -> io::Result<()> {
-        try!(writer.write_i32::<BigEndian>(self.len() as i32));
+        r#try!(writer.write_i32::<BigEndian>(self.len() as i32));
         writer.write_all(self.as_ref())
     }
 }
 
 impl WriteTo for [u8] {
     fn write_to<W: Write>(&self, mut writer: W) -> io::Result<()> {
-        try!(writer.write_i32::<BigEndian>(self.len() as i32));
+        r#try!(writer.write_i32::<BigEndian>(self.len() as i32));
         writer.write_all(self.as_ref())
     }
 }

@@ -2,17 +2,18 @@ use super::{
     active_packetizer::ActivePacketizer, request, watch::WatchType, Request, Response,
     ZooKeeperTransport,
 };
+use crate::{Watch, WatchedEvent, ZkError};
 use byteorder::{BigEndian, WriteBytesExt};
-use failure;
+use failure::format_err;
 use futures::{
     future::Either,
     sync::{mpsc, oneshot},
+    try_ready,
 };
-use slog;
+use slog::{debug, error, info, trace};
 use std::mem;
 use tokio;
 use tokio::prelude::*;
-use {Watch, WatchedEvent, ZkError};
 
 pub(crate) struct Packetizer<S>
 where
@@ -76,7 +77,9 @@ where
 
 enum PacketizerState<S> {
     Connected(ActivePacketizer<S>),
-    Reconnecting(Box<Future<Item = ActivePacketizer<S>, Error = failure::Error> + Send + 'static>),
+    Reconnecting(
+        Box<dyn Future<Item = ActivePacketizer<S>, Error = failure::Error> + Send + 'static>,
+    ),
 }
 
 impl<S> PacketizerState<S>

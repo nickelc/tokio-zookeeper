@@ -1,9 +1,9 @@
 use super::error::ZkError;
 use super::request::{MultiHeader, OpCode};
+use crate::{Acl, KeeperState, Permission, Stat, WatchedEvent, WatchedEventType};
 use byteorder::{BigEndian, ReadBytesExt};
 use failure;
 use std::io::{self, Read};
-use {Acl, KeeperState, Permission, Stat, WatchedEvent, WatchedEventType};
 
 #[derive(Debug)]
 pub(crate) enum Response {
@@ -35,10 +35,10 @@ pub trait ReadFrom: Sized {
 
 impl ReadFrom for Vec<String> {
     fn read_from<R: Read>(read: &mut R) -> io::Result<Self> {
-        let len = try!(read.read_i32::<BigEndian>());
+        let len = r#try!(read.read_i32::<BigEndian>());
         let mut items = Vec::with_capacity(len as usize);
         for _ in 0..len {
-            items.push(try!(read.read_string()));
+            items.push(r#try!(read.read_string()));
         }
         Ok(items)
     }
@@ -47,17 +47,17 @@ impl ReadFrom for Vec<String> {
 impl ReadFrom for Stat {
     fn read_from<R: Read>(read: &mut R) -> io::Result<Stat> {
         Ok(Stat {
-            czxid: try!(read.read_i64::<BigEndian>()),
-            mzxid: try!(read.read_i64::<BigEndian>()),
-            ctime: try!(read.read_i64::<BigEndian>()),
-            mtime: try!(read.read_i64::<BigEndian>()),
-            version: try!(read.read_i32::<BigEndian>()),
-            cversion: try!(read.read_i32::<BigEndian>()),
-            aversion: try!(read.read_i32::<BigEndian>()),
-            ephemeral_owner: try!(read.read_i64::<BigEndian>()),
-            data_length: try!(read.read_i32::<BigEndian>()),
-            num_children: try!(read.read_i32::<BigEndian>()),
-            pzxid: try!(read.read_i64::<BigEndian>()),
+            czxid: r#try!(read.read_i64::<BigEndian>()),
+            mzxid: r#try!(read.read_i64::<BigEndian>()),
+            ctime: r#try!(read.read_i64::<BigEndian>()),
+            mtime: r#try!(read.read_i64::<BigEndian>()),
+            version: r#try!(read.read_i32::<BigEndian>()),
+            cversion: r#try!(read.read_i32::<BigEndian>()),
+            aversion: r#try!(read.read_i32::<BigEndian>()),
+            ephemeral_owner: r#try!(read.read_i64::<BigEndian>()),
+            data_length: r#try!(read.read_i32::<BigEndian>()),
+            num_children: r#try!(read.read_i32::<BigEndian>()),
+            pzxid: r#try!(read.read_i64::<BigEndian>()),
         })
     }
 }
@@ -77,10 +77,10 @@ impl ReadFrom for WatchedEvent {
 
 impl ReadFrom for Vec<Acl> {
     fn read_from<R: Read>(read: &mut R) -> io::Result<Self> {
-        let len = try!(read.read_i32::<BigEndian>());
+        let len = r#try!(read.read_i32::<BigEndian>());
         let mut items = Vec::with_capacity(len as usize);
         for _ in 0..len {
-            items.push(try!(Acl::read_from(read)));
+            items.push(r#try!(Acl::read_from(read)));
         }
         Ok(items)
     }
@@ -88,16 +88,16 @@ impl ReadFrom for Vec<Acl> {
 
 impl ReadFrom for Acl {
     fn read_from<R: Read>(read: &mut R) -> io::Result<Self> {
-        let perms = try!(Permission::read_from(read));
-        let scheme = try!(read.read_string());
-        let id = try!(read.read_string());
+        let perms = r#try!(Permission::read_from(read));
+        let scheme = r#try!(read.read_string());
+        let id = r#try!(read.read_string());
         Ok(Acl { perms, scheme, id })
     }
 }
 
 impl ReadFrom for Permission {
     fn read_from<R: Read>(read: &mut R) -> io::Result<Self> {
-        Ok(Permission::from_raw(try!(read.read_u32::<BigEndian>())))
+        Ok(Permission::from_raw(r#try!(read.read_u32::<BigEndian>())))
     }
 }
 
@@ -122,10 +122,10 @@ pub trait BufferReader: Read {
 
 impl<R: Read> BufferReader for R {
     fn read_buffer(&mut self) -> io::Result<Vec<u8>> {
-        let len = try!(self.read_i32::<BigEndian>());
+        let len = r#try!(self.read_i32::<BigEndian>());
         let len = if len < 0 { 0 } else { len as usize };
         let mut buf = vec![0; len];
-        let read = try!(self.read(&mut buf));
+        let read = r#try!(self.read(&mut buf));
         if read == len {
             Ok(buf)
         } else {
@@ -143,7 +143,7 @@ trait StringReader: Read {
 
 impl<R: Read> StringReader for R {
     fn read_string(&mut self) -> io::Result<String> {
-        let raw = try!(self.read_buffer());
+        let raw = r#try!(self.read_buffer());
         Ok(String::from_utf8(raw).unwrap())
     }
 }

@@ -63,7 +63,7 @@ impl ops::BitOr for Permission {
 }
 
 impl fmt::Display for Permission {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if *self == Permission::ALL {
             write!(f, "ALL")
         } else if *self == Permission::NONE {
@@ -187,14 +187,14 @@ impl Acl {
     }
 }
 
-lazy_static! {
+lazy_static::lazy_static! {
     static ref ACL_CREATOR_ALL: [Acl; 1] = [Acl::new(Permission::ALL, "auth", "")];
     static ref ACL_OPEN_UNSAFE: [Acl; 1] = [Acl::new(Permission::ALL, "world", "anyone")];
     static ref ACL_READ_UNSAFE: [Acl; 1] = [Acl::new(Permission::READ, "world", "anyone")];
 }
 
 impl fmt::Display for Acl {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({}:{}, {})", self.scheme, self.id, self.perms)
     }
 }

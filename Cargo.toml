@@ -14,6 +14,7 @@ keywords = ["zookeeper", "tokio", "asynchronous"]
 categories = ["api-bindings", "asynchronous", "network-programming"]
 
 license = "MIT/Apache-2.0"
+edition = "2018"
 
 [badges]
 travis-ci = { repository = "jonhoo/tokio-zookeeper" }

@@ -100,11 +100,7 @@
 //! # A somewhat silly example
 //!
 //! ```no_run
-//! extern crate tokio;
-//! #[macro_use]
-//! extern crate failure;
-//! extern crate tokio_zookeeper;
-//!
+//! use failure::format_err;
 //! use tokio_zookeeper::*;
 //! use tokio::prelude::*;
 //!
@@ -222,23 +218,11 @@
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![deny(missing_copy_implementations)]
+#![deny(rust_2018_idioms)]
 
-extern crate byteorder;
-#[macro_use]
-extern crate failure;
-#[macro_use]
-extern crate futures;
-extern crate tokio;
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate slog;
-#[cfg(test)]
-extern crate slog_async;
-#[cfg(test)]
-extern crate slog_term;
-
+use failure::{bail, format_err};
 use futures::sync::oneshot;
+use slog::{debug, error, trace};
 use std::borrow::Cow;
 use std::net::SocketAddr;
 use std::time;
@@ -250,8 +234,8 @@ mod proto;
 mod transform;
 mod types;
 
-use proto::{Watch, ZkError};
-pub use types::{
+use crate::proto::{Watch, ZkError};
+pub use crate::types::{
     Acl, CreateMode, KeeperState, MultiResponse, Permission, Stat, WatchedEvent, WatchedEventType,
 };
 
@@ -295,7 +279,7 @@ pub struct ZooKeeperBuilder {
 impl Default for ZooKeeperBuilder {
     fn default() -> Self {
         let drain = slog::Discard;
-        let root = slog::Logger::root(drain, o!());
+        let root = slog::Logger::root(drain, slog::o!());
 
         ZooKeeperBuilder {
             session_timeout: time::Duration::new(0, 0),
@@ -864,7 +848,7 @@ mod tests {
         let decorator = slog_term::TermDecorator::new().build();
         let drain = slog_term::FullFormat::new(decorator).build().fuse();
         let drain = slog_async::Async::new(drain).build().fuse();
-        builder.set_logger(slog::Logger::root(drain, o!()));
+        builder.set_logger(slog::Logger::root(drain, slog::o!()));
 
         let (zk, w): (ZooKeeper, _) = rt
             .block_on(
@@ -1142,7 +1126,7 @@ mod tests {
         let decorator = slog_term::TermDecorator::new().build();
         let drain = slog_term::FullFormat::new(decorator).build().fuse();
         let drain = slog_async::Async::new(drain).build().fuse();
-        builder.set_logger(slog::Logger::root(drain, o!()));
+        builder.set_logger(slog::Logger::root(drain, slog::o!()));
 
         let (zk, _): (ZooKeeper, _) = rt
             .block_on(
@@ -1206,11 +1190,11 @@ mod tests {
         let decorator = slog_term::TermDecorator::new().build();
         let drain = slog_term::FullFormat::new(decorator).build().fuse();
         let drain = slog_async::Async::new(drain).build().fuse();
-        builder.set_logger(slog::Logger::root(drain, o!()));
+        builder.set_logger(slog::Logger::root(drain, slog::o!()));
 
         let check_exists = |zk: ZooKeeper, paths: &'static [&'static str]| {
             let mut fut: Box<
-                futures::Future<Item = (ZooKeeper, Vec<bool>), Error = failure::Error> + Send,
+                dyn futures::Future<Item = (ZooKeeper, Vec<bool>), Error = failure::Error> + Send,
             > = Box::new(futures::future::ok((zk, Vec::new())));
             for p in paths {
                 fut = Box::new(fut.and_then(move |(zk, mut v)| {
