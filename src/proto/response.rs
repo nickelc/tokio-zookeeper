@@ -35,10 +35,10 @@ pub trait ReadFrom: Sized {
 
 impl ReadFrom for Vec<String> {
     fn read_from<R: Read>(read: &mut R) -> io::Result<Self> {
-        let len = r#try!(read.read_i32::<BigEndian>());
+        let len = read.read_i32::<BigEndian>()?;
         let mut items = Vec::with_capacity(len as usize);
         for _ in 0..len {
-            items.push(r#try!(read.read_string()));
+            items.push(read.read_string()?);
         }
         Ok(items)
     }
@@ -47,17 +47,17 @@ impl ReadFrom for Vec<String> {
 impl ReadFrom for Stat {
     fn read_from<R: Read>(read: &mut R) -> io::Result<Stat> {
         Ok(Stat {
-            czxid: r#try!(read.read_i64::<BigEndian>()),
-            mzxid: r#try!(read.read_i64::<BigEndian>()),
-            ctime: r#try!(read.read_i64::<BigEndian>()),
-            mtime: r#try!(read.read_i64::<BigEndian>()),
-            version: r#try!(read.read_i32::<BigEndian>()),
-            cversion: r#try!(read.read_i32::<BigEndian>()),
-            aversion: r#try!(read.read_i32::<BigEndian>()),
-            ephemeral_owner: r#try!(read.read_i64::<BigEndian>()),
-            data_length: r#try!(read.read_i32::<BigEndian>()),
-            num_children: r#try!(read.read_i32::<BigEndian>()),
-            pzxid: r#try!(read.read_i64::<BigEndian>()),
+            czxid: read.read_i64::<BigEndian>()?,
+            mzxid: read.read_i64::<BigEndian>()?,
+            ctime: read.read_i64::<BigEndian>()?,
+            mtime: read.read_i64::<BigEndian>()?,
+            version: read.read_i32::<BigEndian>()?,
+            cversion: read.read_i32::<BigEndian>()?,
+            aversion: read.read_i32::<BigEndian>()?,
+            ephemeral_owner: read.read_i64::<BigEndian>()?,
+            data_length: read.read_i32::<BigEndian>()?,
+            num_children: read.read_i32::<BigEndian>()?,
+            pzxid: read.read_i64::<BigEndian>()?,
         })
     }
 }
@@ -77,10 +77,10 @@ impl ReadFrom for WatchedEvent {
 
 impl ReadFrom for Vec<Acl> {
     fn read_from<R: Read>(read: &mut R) -> io::Result<Self> {
-        let len = r#try!(read.read_i32::<BigEndian>());
+        let len = read.read_i32::<BigEndian>()?;
         let mut items = Vec::with_capacity(len as usize);
         for _ in 0..len {
-            items.push(r#try!(Acl::read_from(read)));
+            items.push(Acl::read_from(read)?);
         }
         Ok(items)
     }
@@ -88,16 +88,16 @@ impl ReadFrom for Vec<Acl> {
 
 impl ReadFrom for Acl {
     fn read_from<R: Read>(read: &mut R) -> io::Result<Self> {
-        let perms = r#try!(Permission::read_from(read));
-        let scheme = r#try!(read.read_string());
-        let id = r#try!(read.read_string());
+        let perms = Permission::read_from(read)?;
+        let scheme = read.read_string()?;
+        let id = read.read_string()?;
         Ok(Acl { perms, scheme, id })
     }
 }
 
 impl ReadFrom for Permission {
     fn read_from<R: Read>(read: &mut R) -> io::Result<Self> {
-        Ok(Permission::from_raw(r#try!(read.read_u32::<BigEndian>())))
+        Ok(Permission::from_raw(read.read_u32::<BigEndian>()?))
     }
 }
 
@@ -122,10 +122,10 @@ pub trait BufferReader: Read {
 
 impl<R: Read> BufferReader for R {
     fn read_buffer(&mut self) -> io::Result<Vec<u8>> {
-        let len = r#try!(self.read_i32::<BigEndian>());
+        let len = self.read_i32::<BigEndian>()?;
         let len = if len < 0 { 0 } else { len as usize };
         let mut buf = vec![0; len];
-        let read = r#try!(self.read(&mut buf));
+        let read = self.read(&mut buf)?;
         if read == len {
             Ok(buf)
         } else {
@@ -143,7 +143,7 @@ trait StringReader: Read {
 
 impl<R: Read> StringReader for R {
     fn read_string(&mut self) -> io::Result<String> {
-        let raw = r#try!(self.read_buffer());
+        let raw = self.read_buffer()?;
         Ok(String::from_utf8(raw).unwrap())
     }
 }
