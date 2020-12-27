@@ -63,7 +63,8 @@ where
                 rx: rx,
                 logger: log,
                 exiting: false,
-            }.map_err(move |e| {
+            }
+            .map_err(move |e| {
                 error!(exitlogger, "packetizer exiting: {:?}", e);
                 drop(e);
             }),

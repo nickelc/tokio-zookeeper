@@ -191,7 +191,8 @@ where
                         }
 
                         if self.inlen() >= 4 && need == 4 {
-                            let length = (&mut &self.inbox[self.instart..]).read_i32::<BigEndian>()?
+                            let length = (&mut &self.inbox[self.instart..])
+                                .read_i32::<BigEndian>()?
                                 as usize;
                             need += length;
                         }
