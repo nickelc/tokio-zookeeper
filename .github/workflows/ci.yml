@@ -1,0 +1,51 @@
+name: CI
+
+on: [push, pull_request]
+
+env:
+  ZOOKEEPER_PORT: 2181
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.continue-on-error || false }}
+
+    strategy:
+      matrix:
+        rust: [stable, beta, nightly]
+        zk: [3.4.13, 3.4.10]
+
+        include:
+          - rust: nightly
+            continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ matrix.rust }}
+
+      - name: Install ZooKeeper v${{ matrix.zk }}
+        env:
+          ZOOKEEPER_VERSION: ${{ matrix.zk }}
+        run: |
+          wget -O zookeeper.tar.gz http://archive.apache.org/dist/zookeeper/zookeeper-${ZOOKEEPER_VERSION}/zookeeper-${ZOOKEEPER_VERSION}.tar.gz
+          mkdir zookeeper
+          tar -zxvf zookeeper.tar.gz -C zookeeper --strip-components 1
+
+      - name: Start ZooKeeper
+        run: |
+          cat > zookeeper/conf/zoo.cfg <<EOF
+          tickTime=2000
+          dataDir=/tmp/data
+          clientPort=$ZOOKEEPER_PORT
+          EOF
+
+          ./zookeeper/bin/zkServer.sh start
+
+      - name: Build
+        run: cargo build
+
+      - name: Test
+        run: cargo test
