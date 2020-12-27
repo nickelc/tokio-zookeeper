@@ -12,7 +12,6 @@ use futures::{
 };
 use slog::{debug, error, info, trace};
 use std::mem;
-use tokio;
 use tokio::prelude::*;
 
 pub(crate) struct Packetizer<S>
@@ -43,7 +42,7 @@ impl<S> Packetizer<S>
 where
     S: ZooKeeperTransport,
 {
-    pub(crate) fn new(
+    pub(crate) fn spawn(
         addr: S::Addr,
         stream: S,
         log: slog::Logger,
@@ -61,7 +60,7 @@ where
                 state: PacketizerState::Connected(ActivePacketizer::new(stream)),
                 xid: 0,
                 default_watcher,
-                rx: rx,
+                rx,
                 logger: log,
                 exiting: false,
             }
@@ -100,7 +99,7 @@ where
         };
 
         // we are now connected!
-        mem::replace(self, PacketizerState::Connected(ap));
+        let _ = mem::replace(self, PacketizerState::Connected(ap));
         self.poll(exiting, logger, default_watcher)
     }
 }
@@ -266,7 +265,7 @@ where
                         });
 
                     // dropping the old state will also cancel in-flight requests
-                    mem::replace(
+                    let _ = mem::replace(
                         &mut self.state,
                         PacketizerState::Reconnecting(Box::new(retry)),
                     );

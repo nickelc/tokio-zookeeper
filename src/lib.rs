@@ -307,7 +307,7 @@ impl ZooKeeperBuilder {
         Error = failure::Error,
     > {
         let (tx, rx) = futures::sync::mpsc::unbounded();
-        let addr = addr.clone();
+        let addr = *addr;
         tokio::net::TcpStream::connect(&addr)
             .map_err(failure::Error::from)
             .and_then(move |stream| self.handshake(addr, stream, tx))
@@ -348,7 +348,7 @@ impl ZooKeeperBuilder {
         debug!(self.logger, "about to perform handshake");
 
         let plog = self.logger.clone();
-        let enqueuer = proto::Packetizer::new(addr, stream, plog, default_watcher);
+        let enqueuer = proto::Packetizer::spawn(addr, stream, plog, default_watcher);
         enqueuer.enqueue(request).map(move |response| {
             trace!(self.logger, "{:?}", response);
             ZooKeeper {
@@ -415,7 +415,7 @@ impl ZooKeeper {
         self.connection
             .enqueue(proto::Request::Create {
                 path: path.to_string(),
-                data: data,
+                data,
                 acl: acl.into(),
                 mode,
             })
@@ -473,7 +473,7 @@ impl ZooKeeper {
         self.connection
             .enqueue(proto::Request::Delete {
                 path: path.to_string(),
-                version: version,
+                version,
             })
             .and_then(move |r| transform::delete(version, r))
             .map(move |r| (self, r))
@@ -770,7 +770,7 @@ impl MultiBuilder {
             path: path.to_string(),
             data: data.into(),
             acl: acl.into(),
-            mode: mode,
+            mode,
         });
         self
     }

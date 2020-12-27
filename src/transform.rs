@@ -160,10 +160,10 @@ pub(crate) fn multi(
 
     Ok(match req {
         RequestMarker::Create => create(res)?
-            .map(|name| MultiResponse::Create(name))
+            .map(MultiResponse::Create)
             .map_err(|err| err.into()),
         RequestMarker::SetData { version } => set_data(*version, res)?
-            .map(|stat| MultiResponse::SetData(stat))
+            .map(MultiResponse::SetData)
             .map_err(|err| err.into()),
         RequestMarker::Delete { version } => delete(*version, res)?
             .map(|_| MultiResponse::Delete)

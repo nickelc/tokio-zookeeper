@@ -2,7 +2,6 @@ use super::error::ZkError;
 use super::request::{MultiHeader, OpCode};
 use crate::{Acl, KeeperState, Permission, Stat, WatchedEvent, WatchedEventType};
 use byteorder::{BigEndian, ReadBytesExt};
-use failure;
 use std::io::{self, Read};
 
 #[derive(Debug)]

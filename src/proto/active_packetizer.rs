@@ -9,7 +9,6 @@ use futures::{
 use slog::{debug, info, trace};
 use std::collections::HashMap;
 use std::{mem, time};
-use tokio;
 use tokio::prelude::*;
 
 pub(super) struct ActivePacketizer<S> {
@@ -329,7 +328,7 @@ where
                                "handling server error response: {:?}", e;
                                "xid" => xid, "opcode" => ?opcode);
 
-                        tx.send(Err(e)).is_ok();
+                        tx.send(Err(e)).ok();
                     } else {
                         let mut r = Response::parse(opcode, &mut buf)?;
 
@@ -355,7 +354,7 @@ where
                             mem::swap(&mut self.password, password);
                         }
 
-                        tx.send(Ok(r)).is_ok(); // if receiver doesn't care, we don't either
+                        tx.send(Ok(r)).ok(); // if receiver doesn't care, we don't either
                     }
                 }
             }
