@@ -1,7 +1,7 @@
 use super::{request, watch::WatchType, Request, Response};
 use crate::{WatchedEvent, WatchedEventType, ZkError};
+use anyhow::bail;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use failure::bail;
 use futures::{
     sync::{mpsc, oneshot},
     try_ready,
@@ -124,7 +124,7 @@ where
         &mut self,
         exiting: bool,
         logger: &mut slog::Logger,
-    ) -> Result<Async<()>, failure::Error>
+    ) -> Result<Async<()>, anyhow::Error>
     where
         S: AsyncWrite,
     {
@@ -145,7 +145,7 @@ where
             self.timer.reset(time::Instant::now() + self.timeout);
         }
 
-        self.stream.poll_flush().map_err(failure::Error::from)?;
+        self.stream.poll_flush().map_err(anyhow::Error::from)?;
 
         if exiting {
             debug!(logger, "shutting down writer");
@@ -159,7 +159,7 @@ where
         &mut self,
         default_watcher: &mut mpsc::UnboundedSender<WatchedEvent>,
         logger: &mut slog::Logger,
-    ) -> Result<Async<()>, failure::Error>
+    ) -> Result<Async<()>, anyhow::Error>
     where
         S: AsyncRead,
     {
@@ -371,7 +371,7 @@ where
         exiting: bool,
         logger: &mut slog::Logger,
         default_watcher: &mut mpsc::UnboundedSender<WatchedEvent>,
-    ) -> Result<Async<()>, failure::Error> {
+    ) -> Result<Async<()>, anyhow::Error> {
         trace!(logger, "poll_read");
         let r = self.poll_read(default_watcher, logger)?;
 

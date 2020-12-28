@@ -106,7 +106,7 @@ explicitly create a `tokio::Runtime` and then use `Runtime::block_on`.
 ## A somewhat silly example
 
 ```rust
-use failure::format_err;
+use anyhow::format_err;
 use tokio_zookeeper::*;
 use tokio::prelude::*;
 

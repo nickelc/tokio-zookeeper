@@ -3,8 +3,8 @@ use super::{
     ZooKeeperTransport,
 };
 use crate::{Watch, WatchedEvent, ZkError};
+use anyhow::format_err;
 use byteorder::{BigEndian, WriteBytesExt};
-use failure::format_err;
 use futures::{
     future::Either,
     sync::{mpsc, oneshot},
@@ -77,7 +77,7 @@ where
 enum PacketizerState<S> {
     Connected(ActivePacketizer<S>),
     Reconnecting(
-        Box<dyn Future<Item = ActivePacketizer<S>, Error = failure::Error> + Send + 'static>,
+        Box<dyn Future<Item = ActivePacketizer<S>, Error = anyhow::Error> + Send + 'static>,
     ),
 }
 
@@ -90,7 +90,7 @@ where
         exiting: bool,
         logger: &mut slog::Logger,
         default_watcher: &mut mpsc::UnboundedSender<WatchedEvent>,
-    ) -> Result<Async<()>, failure::Error> {
+    ) -> Result<Async<()>, anyhow::Error> {
         let ap = match *self {
             PacketizerState::Connected(ref mut ap) => {
                 return ap.poll(exiting, logger, default_watcher)
@@ -171,7 +171,7 @@ where
     S: ZooKeeperTransport,
 {
     type Item = ();
-    type Error = failure::Error;
+    type Error = anyhow::Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
         trace!(self.logger, "packetizer polled");
@@ -287,7 +287,7 @@ impl Enqueuer {
     pub(crate) fn enqueue(
         &self,
         request: Request,
-    ) -> impl Future<Item = Result<Response, ZkError>, Error = failure::Error> {
+    ) -> impl Future<Item = Result<Response, ZkError>, Error = anyhow::Error> {
         let (tx, rx) = oneshot::channel();
         match self.0.unbounded_send((request, tx)) {
             Ok(()) => {

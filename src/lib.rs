@@ -100,7 +100,7 @@
 //! # A somewhat silly example
 //!
 //! ```no_run
-//! use failure::format_err;
+//! use anyhow::format_err;
 //! use tokio_zookeeper::*;
 //! use tokio::prelude::*;
 //!
@@ -220,7 +220,7 @@
 #![deny(missing_copy_implementations)]
 #![deny(rust_2018_idioms)]
 
-use failure::{bail, format_err};
+use anyhow::{bail, format_err};
 use futures::sync::oneshot;
 use slog::{debug, error, trace};
 use std::borrow::Cow;
@@ -304,12 +304,12 @@ impl ZooKeeperBuilder {
         addr: &SocketAddr,
     ) -> impl Future<
         Item = (ZooKeeper, impl Stream<Item = WatchedEvent, Error = ()>),
-        Error = failure::Error,
+        Error = anyhow::Error,
     > {
         let (tx, rx) = futures::sync::mpsc::unbounded();
         let addr = *addr;
         tokio::net::TcpStream::connect(&addr)
-            .map_err(failure::Error::from)
+            .map_err(anyhow::Error::from)
             .and_then(move |stream| self.handshake(addr, stream, tx))
             .map(move |zk| (zk, rx))
     }
@@ -335,7 +335,7 @@ impl ZooKeeperBuilder {
         addr: SocketAddr,
         stream: tokio::net::TcpStream,
         default_watcher: futures::sync::mpsc::UnboundedSender<WatchedEvent>,
-    ) -> impl Future<Item = ZooKeeper, Error = failure::Error> {
+    ) -> impl Future<Item = ZooKeeper, Error = anyhow::Error> {
         let request = proto::Request::Connect {
             protocol_version: 0,
             last_zxid_seen: 0,
@@ -365,7 +365,7 @@ impl ZooKeeper {
     /// See [`ZooKeeperBuilder::connect`].
     pub fn connect(
         addr: &SocketAddr,
-    ) -> impl Future<Item = (Self, impl Stream<Item = WatchedEvent, Error = ()>), Error = failure::Error>
+    ) -> impl Future<Item = (Self, impl Stream<Item = WatchedEvent, Error = ()>), Error = anyhow::Error>
     {
         ZooKeeperBuilder::default().connect(addr)
     }
@@ -405,7 +405,7 @@ impl ZooKeeper {
         data: D,
         acl: A,
         mode: CreateMode,
-    ) -> impl Future<Item = (Self, Result<String, error::Create>), Error = failure::Error>
+    ) -> impl Future<Item = (Self, Result<String, error::Create>), Error = anyhow::Error>
     where
         D: Into<Cow<'static, [u8]>>,
         A: Into<Cow<'static, [Acl]>>,
@@ -438,7 +438,7 @@ impl ZooKeeper {
         path: &str,
         version: Option<i32>,
         data: D,
-    ) -> impl Future<Item = (Self, Result<Stat, error::SetData>), Error = failure::Error>
+    ) -> impl Future<Item = (Self, Result<Stat, error::SetData>), Error = anyhow::Error>
     where
         D: Into<Cow<'static, [u8]>>,
     {
@@ -467,7 +467,7 @@ impl ZooKeeper {
         self,
         path: &str,
         version: Option<i32>,
-    ) -> impl Future<Item = (Self, Result<(), error::Delete>), Error = failure::Error> {
+    ) -> impl Future<Item = (Self, Result<(), error::Delete>), Error = anyhow::Error> {
         trace!(self.logger, "delete"; "path" => path, "version" => ?version);
         let version = version.unwrap_or(-1);
         self.connection
@@ -487,7 +487,7 @@ impl ZooKeeper {
     pub fn get_acl(
         self,
         path: &str,
-    ) -> impl Future<Item = (Self, Result<(Vec<Acl>, Stat), error::GetAcl>), Error = failure::Error>
+    ) -> impl Future<Item = (Self, Result<(Vec<Acl>, Stat), error::GetAcl>), Error = anyhow::Error>
     {
         trace!(self.logger, "get_acl"; "path" => path);
         self.connection
@@ -512,7 +512,7 @@ impl ZooKeeper {
         path: &str,
         acl: A,
         version: Option<i32>,
-    ) -> impl Future<Item = (Self, Result<Stat, error::SetAcl>), Error = failure::Error>
+    ) -> impl Future<Item = (Self, Result<Stat, error::SetAcl>), Error = anyhow::Error>
     where
         A: Into<Cow<'static, [Acl]>>,
     {
@@ -545,7 +545,7 @@ impl ZooKeeper {
         self,
         path: &str,
         watch: Watch,
-    ) -> impl Future<Item = (Self, Option<Stat>), Error = failure::Error> {
+    ) -> impl Future<Item = (Self, Option<Stat>), Error = anyhow::Error> {
         trace!(self.logger, "exists"; "path" => path, "watch" => ?watch);
         self.connection
             .enqueue(proto::Request::Exists {
@@ -560,7 +560,7 @@ impl ZooKeeper {
     pub fn exists(
         self,
         path: &str,
-    ) -> impl Future<Item = (Self, Option<Stat>), Error = failure::Error> {
+    ) -> impl Future<Item = (Self, Option<Stat>), Error = anyhow::Error> {
         self.exists_w(path, Watch::None)
     }
 
@@ -568,7 +568,7 @@ impl ZooKeeper {
         self,
         path: &str,
         watch: Watch,
-    ) -> impl Future<Item = (Self, Option<Vec<String>>), Error = failure::Error> {
+    ) -> impl Future<Item = (Self, Option<Vec<String>>), Error = anyhow::Error> {
         trace!(self.logger, "get_children"; "path" => path, "watch" => ?watch);
         self.connection
             .enqueue(proto::Request::GetChildren {
@@ -587,7 +587,7 @@ impl ZooKeeper {
     pub fn get_children(
         self,
         path: &str,
-    ) -> impl Future<Item = (Self, Option<Vec<String>>), Error = failure::Error> {
+    ) -> impl Future<Item = (Self, Option<Vec<String>>), Error = anyhow::Error> {
         self.get_children_w(path, Watch::None)
     }
 
@@ -595,7 +595,7 @@ impl ZooKeeper {
         self,
         path: &str,
         watch: Watch,
-    ) -> impl Future<Item = (Self, Option<(Vec<u8>, Stat)>), Error = failure::Error> {
+    ) -> impl Future<Item = (Self, Option<(Vec<u8>, Stat)>), Error = anyhow::Error> {
         trace!(self.logger, "get_data"; "path" => path, "watch" => ?watch);
         self.connection
             .enqueue(proto::Request::GetData {
@@ -611,7 +611,7 @@ impl ZooKeeper {
     pub fn get_data(
         self,
         path: &str,
-    ) -> impl Future<Item = (Self, Option<(Vec<u8>, Stat)>), Error = failure::Error> {
+    ) -> impl Future<Item = (Self, Option<(Vec<u8>, Stat)>), Error = anyhow::Error> {
         self.get_data_w(path, Watch::None)
     }
 
@@ -640,7 +640,7 @@ impl WatchGlobally {
     pub fn exists(
         self,
         path: &str,
-    ) -> impl Future<Item = (ZooKeeper, Option<Stat>), Error = failure::Error> {
+    ) -> impl Future<Item = (ZooKeeper, Option<Stat>), Error = anyhow::Error> {
         self.0.exists_w(path, Watch::Global)
     }
 
@@ -657,7 +657,7 @@ impl WatchGlobally {
     pub fn get_children(
         self,
         path: &str,
-    ) -> impl Future<Item = (ZooKeeper, Option<Vec<String>>), Error = failure::Error> {
+    ) -> impl Future<Item = (ZooKeeper, Option<Vec<String>>), Error = anyhow::Error> {
         self.0.get_children_w(path, Watch::Global)
     }
 
@@ -670,7 +670,7 @@ impl WatchGlobally {
     pub fn get_data(
         self,
         path: &str,
-    ) -> impl Future<Item = (ZooKeeper, Option<(Vec<u8>, Stat)>), Error = failure::Error> {
+    ) -> impl Future<Item = (ZooKeeper, Option<(Vec<u8>, Stat)>), Error = anyhow::Error> {
         self.0.get_data_w(path, Watch::Global)
     }
 }
@@ -693,7 +693,7 @@ impl WithWatcher {
         path: &str,
     ) -> impl Future<
         Item = (ZooKeeper, oneshot::Receiver<WatchedEvent>, Option<Stat>),
-        Error = failure::Error,
+        Error = anyhow::Error,
     > {
         let (tx, rx) = oneshot::channel();
         self.0
@@ -719,7 +719,7 @@ impl WithWatcher {
             ZooKeeper,
             Option<(oneshot::Receiver<WatchedEvent>, Vec<String>)>,
         ),
-        Error = failure::Error,
+        Error = anyhow::Error,
     > {
         let (tx, rx) = oneshot::channel();
         self.0
@@ -741,7 +741,7 @@ impl WithWatcher {
             ZooKeeper,
             Option<(oneshot::Receiver<WatchedEvent>, Vec<u8>, Stat)>,
         ),
-        Error = failure::Error,
+        Error = anyhow::Error,
     > {
         let (tx, rx) = oneshot::channel();
         self.0
@@ -816,7 +816,7 @@ impl MultiBuilder {
     /// Run executes the attached requests in one atomic unit.
     pub fn run(
         self,
-    ) -> impl Future<Item = (ZooKeeper, Vec<Result<MultiResponse, error::Multi>>), Error = failure::Error>
+    ) -> impl Future<Item = (ZooKeeper, Vec<Result<MultiResponse, error::Multi>>), Error = anyhow::Error>
     {
         let (zk, requests) = (self.zk, self.requests);
         let reqs_lite: Vec<transform::RequestMarker> = requests.iter().map(|r| r.into()).collect();
@@ -1194,7 +1194,7 @@ mod tests {
 
         let check_exists = |zk: ZooKeeper, paths: &'static [&'static str]| {
             let mut fut: Box<
-                dyn futures::Future<Item = (ZooKeeper, Vec<bool>), Error = failure::Error> + Send,
+                dyn futures::Future<Item = (ZooKeeper, Vec<bool>), Error = anyhow::Error> + Send,
             > = Box::new(futures::future::ok((zk, Vec::new())));
             for p in paths {
                 fut = Box::new(fut.and_then(move |(zk, mut v)| {

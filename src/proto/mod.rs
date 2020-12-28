@@ -16,7 +16,7 @@ pub(crate) use self::watch::Watch;
 
 pub trait ZooKeeperTransport: AsyncRead + AsyncWrite + Sized + Send {
     type Addr: Send;
-    type ConnectError: Into<failure::Error>;
+    type ConnectError: Into<anyhow::Error>;
     type ConnectFut: Future<Item = Self, Error = Self::ConnectError> + Send + 'static;
     fn connect(_: &Self::Addr) -> Self::ConnectFut;
 }
