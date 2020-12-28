@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/tokio-zookeeper.svg)](https://crates.io/crates/tokio-zookeeper)
 [![Documentation](https://docs.rs/tokio-zookeeper/badge.svg)](https://docs.rs/tokio-zookeeper/)
-[![Build Status](https://travis-ci.org/jonhoo/tokio-zookeeper.svg?branch=master)](https://travis-ci.org/jonhoo/tokio-zookeeper)
+[![Build Status](https://github.com/jonhoo/tokio-zookeeper/workflows/CI/badge.svg)](https://github.com/jonhoo/tokio-zookeeper/actions?query=workflow%3ACI)
 
 This crate provides a client for interacting with [Apache
 ZooKeeper](https://zookeeper.apache.org/), a highly reliable distributed service for
