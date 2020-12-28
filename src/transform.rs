@@ -115,7 +115,7 @@ pub(crate) fn check(
     }
 }
 
-/// The subset of [`proto::Request`] that a multi request needs to retain.
+/// The subset of `proto::Request` that a multi request needs to retain.
 ///
 /// In order to properly handle errors, a multi request needs to retain the
 /// expected version for each constituent set data, delete, or check operation.

@@ -4,98 +4,111 @@
 [![Documentation](https://docs.rs/tokio-zookeeper/badge.svg)](https://docs.rs/tokio-zookeeper/)
 [![Build Status](https://travis-ci.org/jonhoo/tokio-zookeeper.svg?branch=master)](https://travis-ci.org/jonhoo/tokio-zookeeper)
 
-This crate provides a client for interacting with [Apache
-ZooKeeper](https://zookeeper.apache.org/), a highly reliable distributed service for
-maintaining configuration information, naming, providing distributed synchronization, and
-providing group services.
+This crate provides a client for interacting with [Apache ZooKeeper],
+a highly reliable distributed service for maintaining configuration information,
+naming, providing distributed synchronization, and providing group services.
+
+[Apache ZooKeeper]: https://zookeeper.apache.org
 
 ## About ZooKeeper
 
-The [ZooKeeper Overview](https://zookeeper.apache.org/doc/current/zookeeperOver.html) provides
-a thorough introduction to ZooKeeper, but we'll repeat the most important points here. At its
-[heart](https://zookeeper.apache.org/doc/current/zookeeperOver.html#sc_designGoals), ZooKeeper
-is a [hierarchical key-value
-store](https://zookeeper.apache.org/doc/current/zookeeperOver.html#sc_dataModelNameSpace) (that
-is, keys can have "sub-keys"), which additional mechanisms that guarantee consistent operation
-across client and server failures. Keys in ZooKeeper look like paths (e.g., `/key/subkey`), and
-every item along a path is called a
-"[Znode](https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#sc_zkDataModel_znodes)".
+The [ZooKeeper Overview] provides a thorough introduction to ZooKeeper, but we'll repeat
+the most important points here. At its [heart][design goals], ZooKeeper is a
+[hierarchical key-value store] (that is, keys can have "sub-keys"), which additional mechanisms
+that guarantee consistent operation across client and server failures. Keys in ZooKeeper look
+like paths (e.g., `/key/subkey`), and every item along a path is called a "[Znode]".
 Each Znode (including those with children) can also have associated data, which can be queried
 and updated like in other key-value stores. Along with its data and children, each Znode stores
-meta-information such as [access-control
-lists](https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#sc_ZooKeeperAccessControl),
-[modification
-timestamps](https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#sc_timeInZk),
-and a version number
-that allows clients to avoid stepping on each other's toes when accessing values (more on that
-later).
+meta-information such as [access-control lists], [modification timestamps], and a version
+number that allows clients to avoid stepping on each other's toes when accessing values (more
+on that later).
+
+[ZooKeeper Overview]: https://zookeeper.apache.org/doc/current/zookeeperOver.html
+[design goals]: https://zookeeper.apache.org/doc/current/zookeeperOver.html#sc_designGoals
+[hierarchical key-value store]: https://zookeeper.apache.org/doc/current/zookeeperOver.html#sc_dataModelNameSpace
+[Znode]: https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#sc_zkDataModel_znodes
+[access-control lists]: https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#sc_ZooKeeperAccessControl
+[modification timestamps]: https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#sc_timeInZk
 
 ### Operations
 
 ZooKeeper's API consists of the same basic operations you would expect to find in a
-file-system: [`create`](struct.ZooKeeper.html#method.create) for creating new Znodes,
-[`delete`](struct.ZooKeeper.html#method.delete) for removing them,
-[`exists`](struct.ZooKeeper.html#method.exists) for checking if a node exists,
-[`get_data`](struct.ZooKeeper.html#method.get_data) and
-[`set_data`](struct.ZooKeeper.html#method.set_data) for getting and setting a node's associated
-data respectively, and [`get_children`](struct.ZooKeeper.html#method.get_children) for
+file-system: [`create`] for creating new Znodes, [`delete`] for removing them,
+[`exists`] for checking if a node exists, [`get_data`] and [`set_data`] for getting
+and setting a node's associated data respectively, and [`get_children`] for
 retrieving the children of a given node (i.e., its subkeys). For all of these operations,
-ZooKeeper gives [strong
-guarantees](https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#ch_zkGuarantees)
-about what happens when there are multiple clients interacting with the system, or even what
-happens in response to system and network failures.
+ZooKeeper gives [strong guarantees] about what happens when there are multiple clients
+interacting with the system, or even what happens in response to system and network failures.
+
+[`create`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/struct.ZooKeeper.html#method.create
+[`delete`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/struct.ZooKeeper.html#method.delete
+[`exists`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/struct.ZooKeeper.html#method.exists
+[`get_data`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/struct.ZooKeeper.html#method.get_data
+[`set_data`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/struct.ZooKeeper.html#method.set_data
+[`get_children`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/struct.ZooKeeper.html#method.get_children
+[strong guarantees]: https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#ch_zkGuarantees
 
 ### Ephemeral nodes
 
 When you create a Znode, you also specify a [`CreateMode`]. Nodes that are created with
 [`CreateMode::Persistent`] are the nodes we have discussed thus far. They remain in the server
 until you delete them. Nodes that are created with [`CreateMode::Ephemeral`] on the other hand
-are special. These [ephemeral
-nodes](https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#Ephemeral+Nodes) are
-automatically deleted by the server when the client that created them disconnects. This can be
-handy for implementing lease-like mechanisms, and for detecting faults. Since they are
-automatically deleted, and nodes with children cannot be deleted directly, ephemeral nodes are
-not allowed to have children.
+are special. These [ephemeral nodes] are automatically deleted by the server when the client
+that created them disconnects. This can be handy for implementing lease-like mechanisms, and
+for detecting faults. Since they are automatically deleted, and nodes with children cannot be
+deleted directly, ephemeral nodes are not allowed to have children.
+
+[`CreateMode`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/enum.CreateMode.html
+[`CreateMode::Persistent`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/enum.CreateMode.html#variant.Persistent
+[`CreateMode::Ephemeral`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/enum.CreateMode.html#variant.Ephemeral
+[ephemeral nodes]: https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#Ephemeral+Nodes
 
 ### Watches
 
 In addition to the methods above, [`ZooKeeper::exists`], [`ZooKeeper::get_data`], and
-[`ZooKeeper::get_children`] also support setting
-"[watches](https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#ch_zkWatches)" on
-a node. A watch is one-time trigger that causes a [`WatchedEvent`] to be sent to the client
-that set the watch when the state for which the watch was set changes. For example, for a
-watched `get_data`, a one-time notification will be sent the first time the data of the target
+[`ZooKeeper::get_children`] also support setting "[watches]" on a node.
+A watch is one-time trigger that causes a [`WatchedEvent`] to be sent to the client that set
+the watch when the state for which the watch was set changes. For example, for a watched
+`get_data`, a one-time notification will be sent the first time the data of the target
 node changes following when the response to the original `get_data` call was processed. You
-should see the ["Watches" entry in the Programmer's
-Guide](https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#ch_zkWatches) for
-details.
+should see the ["Watches" entry in the Programmer's Guide][watches] for details.
+
+[`ZooKeeper::exists`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/struct.ZooKeeper.html#method.exists
+[`ZooKeeper::get_data`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/struct.ZooKeeper.html#method.get_data
+[`ZooKeeper::get_children`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/struct.ZooKeeper.html#method.get_children
+[`WatchedEvent`]: https://docs.rs/tokio-zookeeper/0.1/tokio_zookeeper/struct.WatchedEvent.html
+[watches]: https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#ch_zkWatches
 
 ### Getting started
 
-To get ZooKeeper up and running, follow the official [Getting Started
-Guide](https://zookeeper.apache.org/doc/current/zookeeperStarted.html). In most Linux
+To get ZooKeeper up and running, follow the official [Getting Started Guide]. In most Linux
 environments, the procedure for getting a basic setup working is usually just to install the
 `zookeeper` package and then run `systemctl start zookeeper`. ZooKeeper will then be running at
 `127.0.0.1:2181`.
 
+[Getting Started Guide]: https://zookeeper.apache.org/doc/current/zookeeperStarted.html
+
 ## This implementation
 
 This library is analogous to the asynchronous API offered by the [official Java
-implementation](https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/ZooKeeper.html),
-and for most operations the Java documentation should apply to the Rust implementation. If this
-is not the case, it is considered [a bug](https://github.com/jonhoo/tokio-zookeeper/issues),
+implementation][Java implementation] and for most operations the Java documentation
+should apply to the Rust implementation. If this is not the case, it is considered [a bug],
 and we'd love a bug report with as much relevant information as you can offer.
 
 Note that since this implementation is asynchronous, users of the client must take care to
 not re-order operations in their own code. There is some discussion of this in the [official
-documentation of the Java
-bindings](https://zookeeper.apache.org/doc/r3.4.12/zookeeperProgrammers.html#Java+Binding).
+documentation of the Java bindings][Java bindings].
 
-For more information on ZooKeeper, see the [ZooKeeper Programmer's
-Guide](https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html) and the [Confluence
-ZooKeeper wiki](https://cwiki.apache.org/confluence/display/ZOOKEEPER/Index). There is also a
-basic tutorial (that uses the Java client)
-[here](https://zookeeper.apache.org/doc/current/zookeeperTutorial.html).
+For more information on ZooKeeper, see the [ZooKeeper Programmer's Guide] and the [Confluence
+ZooKeeper wiki]. There is also a basic tutorial (that uses the Java client)
+[here][tutorial].
+
+[Java implementation]: https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/ZooKeeper.html
+[a bug]: https://github.com/jonhoo/tokio-zookeeper/issues
+[Java bindings]: https://zookeeper.apache.org/doc/r3.4.12/zookeeperProgrammers.html#Java+Binding
+[ZooKeeper Programmer's Guide]: https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html
+[Confluence ZooKeeper wiki]: https://cwiki.apache.org/confluence/display/ZOOKEEPER/Index
+[tutorial]: https://zookeeper.apache.org/doc/current/zookeeperTutorial.html
 
 ### Interaction with Tokio
 
